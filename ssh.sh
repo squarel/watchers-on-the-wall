@@ -1,3 +1,21 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+# set -o xtrace
+
+__DIR__="$(cd "$(dirname "${0}")"; echo $(pwd))"
+__BASE__="$(basename "${0}")"
+__FILE__="${__DIR__}/${__BASE__}"
+
+ARG1="${1:-Undefined}"
+
+if [[ "$(id -u)" != "0" ]]; then
+    echo "This script must be run as root" 1>&2
+    exit 1
+fi
+
 # check or add group
 grep -i "wow_allow_tunnel" /etc/group >/dev/null 2>&1
 if [ $? -eq 0 ]; then
@@ -9,17 +27,17 @@ fi
 # add user
 useradd $1 -g wow_allow_tunnel
 passwd $1 <<EOF
-123456
-123456
+$2
+$2
 EOF
 
 # check or add tunnel shell
-tunnel_shell="usr/bin/wow_tunnel_shell"
-if [ ! -f "tunnel_shell" ]; then
-touch /usr/bin/wow_tunnel_shell
-chmod +x /usr/bin/wow_tunnel_shell
+tunnel_shell="/usr/bin/wow_tunnel_shell"
+if [ ! -f "$tunnel_shell" ]; then
+    touch $tunnel_shell
+    chmod +x $tunnel_shell
 
-cat > /usr/bin/wow_tunnel_shell <<EOC
+cat > $tunnel_shell <<EOF
 #!/bin/bash
 trap '' 2 20 24
 clear
@@ -28,7 +46,7 @@ while [ true ] ; do
     sleep 1000
 done
 exit 0
-EOC
+EOF
 fi
 
 # change shell
